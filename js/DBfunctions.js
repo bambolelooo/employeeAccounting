@@ -24,6 +24,12 @@ const questions = [
 			"Add a role",
 			"Add an employee",
 			"Update an employee role",
+			"Update employee managers",
+			"View employees by manager",
+			"Remove a department",
+			"Remove a role",
+			"Fire an employee",
+			"View the total utilized budget of a department",
 			"Exit",
 		],
 	},
@@ -40,7 +46,7 @@ function main() {
 			db.query(emptyDBstring, (err) => {
 				if (err) throw err;
 				console.log(
-					"\nEmpty database 'employees' created because couldn't find one.\n"
+					"\n'employees' database not found creating an empty one\n"
 				);
 				askQuestions();
 			});
@@ -85,6 +91,30 @@ function askQuestions() {
 				updateEmployeeRole();
 				break;
 
+			case "Update employee managers":
+				updateEmployeeManager();
+				break;
+
+			case "View employees by manager":
+				viewEmployeesByManager();
+				break;
+
+			case "Remove a department":
+				removeDepartment();
+				break;
+
+			case "Remove a role":
+				removeRole();
+				break;
+
+			case "Fire an employee":
+				fireEmployee();
+				break;
+
+			case "View the total utilized budget of a department":
+				viewBudget();
+				break;
+
 			case "Exit":
 				console.log("Goodbye!");
 				process.exit();
@@ -121,14 +151,192 @@ function viewEmployees() {
 	);
 }
 
-// TODO: addDepartment(), addRole(), addEmployee(), updateEmployeeRole()
+function addDepartment() {
+	inquirer
+		.prompt([
+			{
+				name: "name",
+				type: "input",
+				message: "What is the name of the new department?",
+			},
+		])
+		.then((answers) => {
+			db.query(
+				"INSERT INTO department (name) VALUES (?)",
+				[answers.name],
+				(err) => {
+					if (err) throw err;
+					console.log(`\nAdded ${answers.name} to departments\n`);
+					askQuestions();
+				}
+			);
+		});
+}
 
-function addDepartment() {}
+function addRole() {
+	db.query("SELECT * FROM department", (err, results) => {
+		if (err) throw err;
+		const departments = results.map((department) => {
+			return {
+				name: department.name,
+				value: department.id,
+			};
+		});
+		inquirer
+			.prompt([
+				{
+					name: "title",
+					type: "input",
+					message: "What is the title of the new role?",
+				},
+				{
+					name: "salary",
+					type: "input",
+					message: "What is the salary of the new role?",
+				},
+				{
+					name: "department",
+					type: "list",
+					message: "What department does the new role belong to?",
+					choices: departments,
+				},
+			])
+			.then((answers) => {
+				db.query(
+					"INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)",
+					[answers.title, answers.salary, answers.department],
+					(err) => {
+						if (err) throw err;
+						console.log(`\nAdded '${answers.title}' to roles\n`);
+						askQuestions();
+					}
+				);
+			});
+	});
+}
 
-function addRole() {}
+function addEmployee() {
+	db.query("SELECT * FROM role", (err, results) => {
+		if (err) throw err;
+		const roles = results.map((role) => {
+			return {
+				name: role.title,
+				value: role.id,
+			};
+		});
+		db.query("SELECT * FROM employee", (err, results) => {
+			if (err) throw err;
+			const employees = results.map((employee) => {
+				return {
+					name: `${employee.first_name} ${employee.last_name}`,
+					value: employee.id,
+				};
+			});
+			employees.unshift({ name: "None", value: null });
+			inquirer
+				.prompt([
+					{
+						name: "first_name",
+						type: "input",
+						message: "What is the first name of the new employee?",
+					},
+					{
+						name: "last_name",
+						type: "input",
+						message: "What is the last name of the new employee?",
+					},
+					{
+						name: "role",
+						type: "list",
+						message: "What is the role of the new employee?",
+						choices: roles,
+					},
+					{
+						name: "manager",
+						type: "list",
+						message: "Who is the manager of the new employee?",
+						choices: employees,
+					},
+				])
+				.then((answers) => {
+					db.query(
+						"INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)",
+						[
+							answers.first_name,
+							answers.last_name,
+							answers.role,
+							answers.manager,
+						],
+						(err) => {
+							if (err) throw err;
+							console.log(
+								`\nAdded '${answers.first_name} ${answers.last_name}' to employees\n`
+							);
+							askQuestions();
+						}
+					);
+				});
+		});
+	});
+}
 
-function addEmployee() {}
+function updateEmployeeRole() {
+	db.query("SELECT * FROM employee", (err, results) => {
+		if (err) throw err;
+		const employees_list = results;
+		const employees = results.map((employee) => {
+			return {
+				name: `${employee.first_name} ${employee.last_name}`,
+				value: employee.id,
+			};
+		});
+		db.query("SELECT * FROM role", (err, results) => {
+			if (err) throw err;
+			const roles_list = results;
 
-function updateEmployeeRole() {}
+			const roles = results.map((role) => {
+				return {
+					name: role.title,
+					value: role.id,
+				};
+			});
+			inquirer
+				.prompt([
+					{
+						name: "employee",
+						type: "list",
+						message:
+							"Which employee's role would you like to update?",
+						choices: employees,
+					},
+					{
+						name: "role",
+						type: "list",
+						message: "What is the new role of the employee?",
+						choices: roles,
+					},
+				])
+				.then((answers) => {
+					db.query(
+						"UPDATE employee SET role_id = ? WHERE id = ?",
+						[answers.role, answers.employee],
+						(err) => {
+							if (err) throw err;
+							console.log(
+								`\nUpdated ${
+									employees_list[answers.employee].first_name
+								} ${
+									employees_list[answers.employee].last_name
+								}'s role to '${
+									roles_list[answers.role].title
+								}'\n`
+							);
+							askQuestions();
+						}
+					);
+				});
+		});
+	});
+}
 
 module.exports = { main };
