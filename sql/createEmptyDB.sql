@@ -3,12 +3,12 @@ CREATE DATABASE employees;
 USE employees;
 
 CREATE TABLE employees.department (
-  id INT NOT NULL,
+  id INT NOT NULL AUTO_INCREMENT,
   name VARCHAR(30) NOT NULL,
   PRIMARY KEY (id));
 
 CREATE TABLE employees.role (
-  id INT NOT NULL,
+  id INT NOT NULL AUTO_INCREMENT,
   title VARCHAR(30) NOT NULL,
   salary DECIMAL NULL,
   department_id INT NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE employees.role (
   );
 
 CREATE TABLE employees.employee (
-  id INT NOT NULL,
+  id INT NOT NULL AUTO_INCREMENT,
   first_name VARCHAR(30) NOT NULL,
   last_name VARCHAR(30) NULL,
   role_id INT NOT NULL,
