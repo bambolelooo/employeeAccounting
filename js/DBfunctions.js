@@ -85,10 +85,6 @@ function askQuestions() {
 				updateEmployeeRole();
 				break;
 
-			case "Update an employee role":
-				updateEmployeeRole();
-				break;
-
 			case "Exit":
 				console.log("Goodbye!");
 				process.exit();
@@ -124,5 +120,15 @@ function viewEmployees() {
 		}
 	);
 }
+
+// TODO: addDepartment(), addRole(), addEmployee(), updateEmployeeRole()
+
+function addDepartment() {}
+
+function addRole() {}
+
+function addEmployee() {}
+
+function updateEmployeeRole() {}
 
 module.exports = { main };
