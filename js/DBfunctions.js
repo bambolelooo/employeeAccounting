@@ -38,7 +38,7 @@ function main() {
 		if (err) throw err;
 		if (results.length === 0) {
 			console.log(
-				"Looks like you don't have 'employees' database lets create one together"
+				"Looks like you don't have 'employees' database.\nLet's create one together!"
 			);
 			DBsetupFunction();
 		} else {
