@@ -27,9 +27,6 @@ const questions = [
 			"Update employee managers",
 			"View employees by manager",
 			"View employees by department",
-			"Remove a department",
-			"Remove a role",
-			"Fire an employee",
 			"View the total utilized budget of a department",
 			"Exit",
 		],
@@ -40,17 +37,10 @@ function main() {
 	db.query("SHOW DATABASES LIKE 'employees';", (err, results) => {
 		if (err) throw err;
 		if (results.length === 0) {
-			const emptyDBstring = fs
-				.readFileSync("./sql/createEmptyDB.sql")
-				.toString()
-				.replace(/(\r\n|\n|\r)/gm, " ");
-			db.query(emptyDBstring, (err) => {
-				if (err) throw err;
-				console.log(
-					"\n'employees' database not found creating an empty one\n"
-				);
-				askQuestions();
-			});
+			console.log(
+				"Looks like you don't have 'employees' database lets create one together"
+			);
+			DBsetupFunction();
 		} else {
 			db.query("USE employees", (err) => {
 				if (err) throw err;
@@ -102,18 +92,6 @@ function askQuestions() {
 
 			case "View employees by manager":
 				viewEmployeesByManager();
-				break;
-
-			case "Remove a department":
-				removeDepartment();
-				break;
-
-			case "Remove a role":
-				removeRole();
-				break;
-
-			case "Fire an employee":
-				fireEmployee();
 				break;
 
 			case "View the total utilized budget of a department":
@@ -549,6 +527,62 @@ function viewBudget() {
 				);
 			});
 	});
+}
+
+function DBsetupFunction() {
+	function toSqlString(sqlFile) {
+		return sqlFile.toString().replace(/(\r\n|\n|\r)/gm, " ");
+	}
+	function createDatabase(DBtype) {
+		db.connect(function (err) {
+			if (err) throw err;
+			console.log("Connected to MySQL!");
+			const sqlFile =
+				DBtype === "Populated"
+					? "./sql/createPopulatedDB.sql"
+					: "./sql/createEmptyDB.sql";
+			const sql = toSqlString(fs.readFileSync(sqlFile));
+			db.query(toSqlString(sql), function (err) {
+				if (err) throw err;
+				console.log(
+					`${
+						DBtype === "Populated" ? "Populated" : "Empty"
+					} database created\n`
+				);
+				db.query(
+					"SELECT table_name as 'Created tables' FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema = 'employees'; SELECT * FROM department; SELECT * FROM employee; SELECT * FROM role;",
+					(err, results) => {
+						if (err) throw err;
+
+						results.map((result, i) => {
+							if (i !== 0)
+								console.log(
+									results[0][i - 1]["Created tables"]
+								);
+							console.table(
+								result.length !== 0 ? result : "(empty)\n"
+							);
+						});
+						askQuestions();
+					}
+				);
+			});
+		});
+	}
+
+	// ask which type of db you need (populated, empty)
+	inquirer
+		.prompt([
+			{
+				name: "DBtype",
+				type: "list",
+				choices: ["Populated", "Empty"],
+				message: "What type of DB do you need?",
+			},
+		])
+		.then((answers) => {
+			createDatabase(answers.DBtype);
+		});
 }
 
 module.exports = { main };
