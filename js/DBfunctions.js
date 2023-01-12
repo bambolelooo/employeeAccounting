@@ -26,6 +26,7 @@ const questions = [
 			"Update an employee role",
 			"Update employee managers",
 			"View employees by manager",
+			"View employees by department",
 			"Remove a department",
 			"Remove a role",
 			"Fire an employee",
@@ -93,6 +94,10 @@ function askQuestions() {
 
 			case "Update employee managers":
 				updateEmployeeManager();
+				break;
+
+			case "View employees by department":
+				viewEmployeesByDepartment();
 				break;
 
 			case "View employees by manager":
@@ -330,7 +335,7 @@ function updateEmployeeRole() {
 									employees_list[answers.employee - 1]
 										.last_name
 								}'s role to '${
-									roles_list[answers.role].title
+									roles_list[answers.role - 1].title
 								}'\n`
 							);
 							askQuestions();
@@ -430,6 +435,116 @@ function updateEmployeeManager() {
 									}
 								);
 							});
+					}
+				);
+			});
+	});
+}
+
+function viewEmployeesByManager() {
+	db.query("SELECT * FROM employee", (err, results) => {
+		if (err) throw err;
+		const employees = results.map((employee) => {
+			return {
+				name: `${employee.first_name} ${employee.last_name}`,
+				value: employee.id,
+			};
+		});
+		inquirer
+			.prompt([
+				{
+					name: "manager",
+					type: "list",
+					message:
+						"Which manager's employees would you like to view?",
+					choices: employees,
+				},
+			])
+			.then((answers) => {
+				db.query(
+					`SELECT * FROM employee WHERE manager_id = ?`,
+					[answers.manager],
+					(err, results) => {
+						if (err) throw err;
+						console.log(
+							`\n${results.length} employees found under ${
+								employees[answers.manager - 1].name
+							}\n`
+						);
+						console.table(results);
+						askQuestions();
+					}
+				);
+			});
+	});
+}
+
+function viewEmployeesByDepartment() {
+	db.query("SELECT * FROM department", (err, results) => {
+		if (err) throw err;
+		const departments_array = results;
+		const departments = results.map((department) => {
+			return { name: department.name, value: department.id };
+		});
+		inquirer
+			.prompt([
+				{
+					name: "department",
+					type: "list",
+					choices: departments,
+					message: "Employees from which department you want to see",
+				},
+			])
+			.then((answer) => {
+				db.query(
+					"SELECT CONCAT_WS(' ', first_name, last_name) as name, role.title, role.salary FROM employee, role WHERE (role.department_id = ? AND employee.role_id = role.id)",
+					[answer.department],
+					(err, results2) => {
+						if (err) throw err;
+
+						console.log(
+							`Found ${results2.length} employees in ${
+								departments_array[answer.department - 1].name
+							}\n`
+						);
+						console.table(results2);
+
+						askQuestions();
+					}
+				);
+			});
+	});
+}
+
+function viewBudget() {
+	db.query("SELECT * FROM department", (err, results) => {
+		if (err) throw err;
+		const departments_array = results;
+		const departments = results.map((department) => {
+			return { name: department.name, value: department.id };
+		});
+		inquirer
+			.prompt([
+				{
+					name: "department",
+					type: "list",
+					choices: departments,
+					message: "Where would you like to see total budget?",
+				},
+			])
+			.then((answer) => {
+				db.query(
+					"SELECT COALESCE(SUM(role.salary), 0) as budget FROM employee, role WHERE (role.department_id = ? AND employee.role_id = role.id)",
+					[answer.department],
+					(err, results) => {
+						if (err) throw err;
+						console.log(
+							`Total budget for ${
+								departments_array[answer.department - 1].name
+							}`
+						);
+						console.table(results);
+						askQuestions();
 					}
 				);
 			});
