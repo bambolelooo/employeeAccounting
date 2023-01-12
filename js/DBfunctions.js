@@ -38,7 +38,7 @@ function main() {
 		if (err) throw err;
 		if (results.length === 0) {
 			console.log(
-				"Looks like you don't have 'employees' database.\nLet's create one together!"
+				"\nLooks like you don't have 'employees' database.\nLet's create one together!"
 			);
 			DBsetupFunction();
 		} else {
@@ -176,6 +176,10 @@ function addRole() {
 					name: "salary",
 					type: "input",
 					message: "What is the salary of the new role?",
+					validate: (input) => {
+						if (isNaN(input)) return "Only numbers please :3";
+						else return true;
+					},
 				},
 				{
 					name: "department",
