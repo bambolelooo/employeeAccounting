@@ -142,7 +142,7 @@ function viewRoles() {
 
 function viewEmployees() {
 	db.query(
-		"SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT_WS(' ', manager.first_name, manager.last_name) AS manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id JOIN employee manager ON employee.manager_id = manager.id ORDER BY employee.id;",
+		"SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary, CONCAT_WS(' ', manager.first_name, manager.last_name) AS manager FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON employee.manager_id = manager.id ORDER BY employee.id",
 		(err, results) => {
 			if (err) throw err;
 			console.table(results);
@@ -324,9 +324,11 @@ function updateEmployeeRole() {
 							if (err) throw err;
 							console.log(
 								`\nUpdated ${
-									employees_list[answers.employee].first_name
+									employees_list[answers.employee - 1]
+										.first_name
 								} ${
-									employees_list[answers.employee].last_name
+									employees_list[answers.employee - 1]
+										.last_name
 								}'s role to '${
 									roles_list[answers.role].title
 								}'\n`
@@ -336,6 +338,101 @@ function updateEmployeeRole() {
 					);
 				});
 		});
+	});
+}
+
+function updateEmployeeManager() {
+	db.query("SELECT * FROM employee", (err, results) => {
+		if (err) throw err;
+		const employees_list = results;
+		const employees = results.map((employee) => {
+			return {
+				name: `${employee.first_name} ${employee.last_name}`,
+				value: employee.id,
+			};
+		});
+		inquirer
+			.prompt([
+				{
+					name: "employee",
+					type: "list",
+					message:
+						"Which employee's manager would you like to update?",
+					choices: employees,
+				},
+			])
+			.then((answers) => {
+				db.query(
+					"SELECT * FROM employee WHERE id != ?",
+					[answers.employee],
+					(err, results) => {
+						if (err) throw err;
+						const managers = results.map((manager) => {
+							return {
+								name: `${manager.first_name} ${manager.last_name}`,
+								value: manager.id,
+							};
+						});
+						managers.unshift({ name: "None", value: null });
+
+						inquirer
+							.prompt([
+								{
+									name: "manager",
+									type: "list",
+									message:
+										"Who is the new manager of the employee?",
+									choices: managers,
+								},
+							])
+							.then((answers2) => {
+								db.query(
+									"UPDATE employee SET manager_id = ? WHERE id = ?",
+									[answers2.manager, answers.employee],
+									(err) => {
+										console.log(answers2.manager);
+										if (err) throw err;
+										if (answers2.manager === null) {
+											console.log(
+												`${
+													employees_list[
+														answers.employee - 1
+													].first_name
+												} ${
+													employees_list[
+														answers.employee - 1
+													].last_name
+												} does not have a manager anymore\n`
+											);
+										} else {
+											console.log(
+												`\nUpdated ${
+													employees_list[
+														answers.employee - 1
+													].first_name
+												} ${
+													employees_list[
+														answers.employee - 1
+													].last_name
+												}'s manager to ${
+													employees_list[
+														answers2.manager - 1
+													].first_name
+												} ${
+													employees_list[
+														answers2.manager - 1
+													].last_name
+												}\n`
+											);
+										}
+
+										askQuestions();
+									}
+								);
+							});
+					}
+				);
+			});
 	});
 }
 
