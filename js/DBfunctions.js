@@ -440,7 +440,7 @@ function viewEmployeesByManager() {
 			])
 			.then((answers) => {
 				db.query(
-					`SELECT * FROM employee WHERE manager_id = ?`,
+					`SELECT employee.id, employee.first_name as 'first name', employee.last_name as 'last name', role.title FROM role, employee WHERE manager_id = ? AND role.id = employee.role_id`,
 					[answers.manager],
 					(err, results) => {
 						if (err) throw err;
