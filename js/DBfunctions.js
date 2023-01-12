@@ -377,7 +377,6 @@ function updateEmployeeManager() {
 									"UPDATE employee SET manager_id = ? WHERE id = ?",
 									[answers2.manager, answers.employee],
 									(err) => {
-										console.log(answers2.manager);
 										if (err) throw err;
 										if (answers2.manager === null) {
 											console.log(
