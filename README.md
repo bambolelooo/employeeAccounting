@@ -124,6 +124,10 @@ Manage your employees database. With this app you can:
     ```sh
     npm install
     ```
+3. Create a file named .env in the root folder, where you mention mySQL username and password
+![image](https://user-images.githubusercontent.com/63548697/212225516-c81e39b0-c808-4548-b7c4-5721f9cbd39e.png)
+
+\
    There is no need to create any databases, app will create them for you
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
